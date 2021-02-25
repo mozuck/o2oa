@@ -227,12 +227,12 @@ public class ActionPersistPublishContent extends BaseAction {
 
 		if (check) {
 			try {
-				JsonElement docData = XGsonBuilder.instance().toJsonTree(wi.getDocData(), Map.class);
+				//JsonElement docData = XGsonBuilder.instance().toJsonTree(wi.getDocData(), Map.class);
 				wi.setDocStatus("published");
 				if( wi.getPublishTime() == null ) { wi.setPublishTime(new Date()); }
 				document =  wi.copier.copy(wi);
 				document.setId( wi.getId() );
-				document = documentPersistService.save( document, docData );
+				document = documentPersistService.save( document, wi.getDocData() );
 			} catch (Exception e) {
 				check = false;
 				Exception exception = new ExceptionDocumentInfoProcess(e, "系统在创建文档信息时发生异常！");
