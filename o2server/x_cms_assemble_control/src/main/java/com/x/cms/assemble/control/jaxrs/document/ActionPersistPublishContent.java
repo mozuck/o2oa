@@ -201,7 +201,7 @@ public class ActionPersistPublishContent extends BaseAction {
 						wi.setCreatorIdentity( userManagerService.getMajorIdentityWithPerson( wi.getCreatorPerson() ) );
 					}
 				}
-				
+
 				if ( !StringUtils.equals(  "cipher", wi.getCreatorIdentity() ) && !StringUtils.equals(  "xadmin", wi.getCreatorIdentity() )) {
 					//说明是实际的用户，并不使用cipher和xadmin代替
 					if (StringUtils.isNotEmpty( wi.getCreatorIdentity() )) {
@@ -284,7 +284,7 @@ public class ActionPersistPublishContent extends BaseAction {
 		}
 
 		if (check) {
-			try {				
+			try {
 				Wo wo = new Wo();
 				wo.setId( document.getId() );
 				result.setData( wo );
@@ -397,7 +397,7 @@ public class ActionPersistPublishContent extends BaseAction {
 				if( categoryInfo.getSendNotify() == null ) {
 					if( StringUtils.equals("信息", categoryInfo.getDocumentType()) ) {
 						notify = true;
-					}						
+					}
 				}else {
 					if( categoryInfo.getSendNotify() ) {
 						notify = true;
@@ -454,40 +454,40 @@ public class ActionPersistPublishContent extends BaseAction {
 	}
 
 	public static class Wi {
-		
+
 		public static WrapCopier<Wi, Document> copier = WrapCopierFactory.wi( Wi.class, Document.class, null, null);
 
 		private String id = null;
 
 		@FieldDescribe( "文档操作者身份" )
 		private String identity = null;
-		
+
 //		@FieldDescribe( "数据的路径列表." )
 //		private String[] dataPaths = null;
-		
+
 		@FieldDescribe( "启动流程的JobId." )
 		private String wf_jobId = null;
-		
+
 		@FieldDescribe( "启动流程的WorkId." )
 		private String wf_workId = null;
-		
+
 		@FieldDescribe( "启动流程的附件列表." )
-		private String[] wf_attachmentIds = null;	
-		
+		private String[] wf_attachmentIds = null;
+
 		@FieldDescribe( "文档数据JSON对象." )
-		private Map<?, ?> docData = null;
-		
+		private JsonElement docData = null;
+
 		@FieldDescribe( "文档读者，Json数组，权限对象需要包含四个属性:<br/>permission权限类别：读者|阅读|作者|管理,  <br/>permissionObjectType使用者类别：所有人|组织|人员|群组, <br/>permissionObjectCode使用者编码：所有人|组织编码|人员UID|群组编码, <br/>permissionObjectName使用者名称：所有人|组织名称|人员名称|群组名称" )
 		private List<PermissionInfo> readerList = null;
-		
+
 		@FieldDescribe( "文档编辑者, ，Json数组，权限对象需要包含四个属性:<br/>permission权限类别：读者|阅读|作者|管理,  <br/>permissionObjectType使用者类别：所有人|组织|人员|群组, <br/>permissionObjectCode使用者编码：所有人|组织编码|人员UID|群组编码, <br/>permissionObjectName使用者名称：所有人|组织名称|人员名称|群组名称" )
 		private List<PermissionInfo> authorList = null;
-		
+
 		private List<String> cloudPictures = null;
-		
+
 		@FieldDescribe( "不修改权限（跳过权限设置，保留原来的设置）， True|False." )
 		private Boolean skipPermission  = false;
-		
+
 		@FieldDescribe("文档摘要，70字以内")
 		private String summary;
 
@@ -538,7 +538,7 @@ public class ActionPersistPublishContent extends BaseAction {
 		private Long commendCount = 0L;
 
 		private Long commentCount = 0L;
-		
+
 		private Date publishTime;
 
 		private Date modifyTime;
@@ -985,11 +985,12 @@ public class ActionPersistPublishContent extends BaseAction {
 //			this.dataPaths = dataPaths;
 //		}
 
-		public Map<?, ?> getDocData() {
+
+		public JsonElement getDocData() {
 			return docData;
 		}
 
-		public void setDocData(Map<?, ?> docData) {
+		public void setDocData(JsonElement docData) {
 			this.docData = docData;
 		}
 
@@ -1034,7 +1035,7 @@ public class ActionPersistPublishContent extends BaseAction {
 		}
 
 	}
-	
+
 	public static class Wo extends WoId {
 
 	}
