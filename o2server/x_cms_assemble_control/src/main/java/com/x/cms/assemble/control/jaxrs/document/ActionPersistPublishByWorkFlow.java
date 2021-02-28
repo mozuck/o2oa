@@ -28,6 +28,7 @@ import com.x.cms.core.entity.FileInfo;
 import com.x.cms.core.entity.element.Form;
 import com.x.processplatform.core.entity.content.Attachment;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -213,7 +214,9 @@ public class ActionPersistPublishByWorkFlow extends BaseAction {
 			try {
 				//JsonElement docData = XGsonBuilder.instance().toJsonTree(wi.getDocData());
 				wi.setDocStatus("published");
-				wi.setPublishTime(new Date());
+				if(wi.getPublishTime()==null) {
+					wi.setPublishTime(new Date());
+				}
 				document = documentPersistService.save(wi, wi.getDocData());
 			} catch (Exception e) {
 				check = false;
@@ -375,8 +378,8 @@ public class ActionPersistPublishByWorkFlow extends BaseAction {
 			}
 		}
 
-		//判断是否需要发送通知消息
-		if (check) {
+		//判断是否需要发送通知消息,后端业务接口不需要发送消息
+		/*if (check) {
 			try {
 				Boolean notify = false;
 				if( categoryInfo.getSendNotify() == null ) {
@@ -398,7 +401,7 @@ public class ActionPersistPublishByWorkFlow extends BaseAction {
 				result.error( exception );
 				logger.error( e, effectivePerson, request, null);
 			}
-		}
+		}*/
 
 		CacheManager.notify(Document.class);
 		return result;
