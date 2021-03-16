@@ -424,7 +424,7 @@ MWF.xApplication.process.Xform.DatagridMobile = new Class(
 
                     var cellData = data[th.get("id")];
 
-                    if( typeOf( cellData ) === "object" ) {
+                    if( typeOf( cellData ) !== "array" ) {
                         if (cellData) {
                             for (key in cellData) {
                                 var v = cellData[key];
