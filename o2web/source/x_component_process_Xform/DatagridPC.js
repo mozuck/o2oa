@@ -259,12 +259,14 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 				titleThs.each(function(th, index){
 					var cellData = data[th.get("id")];
 					var text = "";
-					for (key in cellData){
-						var value = cellData[key];
-						text = this._getValueText(index-1, value);
-						break;
+					if( typeOf( cellData ) === "object" ){
+						for (key in cellData){
+							var value = cellData[key];
+							text = this._getValueText(index-1, value);
+							break;
+						}
 					}
-					this._createNewEditTd(tr, index, editorTds[index].get("id"), text, titleThs.length-1);
+					this._createNewEditTd(tr, index, editorTds[index].get("id"), text, titleThs.length-1, idx);
 				}.bind(this));
 			}.bind(this));
 		}
@@ -458,7 +460,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 				if (module){
 					if (module.json.type=="sequence"){
 						module.node.set("text", module.node.getParent("tr").rowIndex);
-					}else {
+					}else if( module.setData ){
 
 						if (data[id]) {
 							module.setData(data[id][module.json.id]);
@@ -604,6 +606,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			var id = th.get("id");
 			var module = this.editModules[idx-1];
 			if (module){
+				var data;
 				if (module.json.type=="sequence"){
 					flag = false;
 					var i = newTr.rowIndex;
@@ -620,7 +623,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 				// 	if( data.value && data.value.length )flag = false;
 				// 	if (!griddata[id]) griddata[id] = {};
 				// 	griddata[id][module.json.id] = data.value;
-				}else{
+				}else if( module.getTextData ){
 					var data = module.getTextData();
 					if (data.value[0]) flag = false;
 					if (data.value.length<2){
@@ -632,27 +635,31 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 					}
 				}
 
-				if (cell){
-					if( module.json.type == "ImageClipper" ){
-						this._createImage( cell, module, data.text );
-					}else if( module.json.type == "Attachment" || module.json.type == "AttachmentDg" ){
-						this._createAttachment( cell, module, data );
-					}else{
-						var text = this._getValueText(idx-1, data.text.join(", "));
-						if( module.json.type == "Textarea"){
-							cell.set("html", text);
-						}else{
-							cell.set("text", data.text.join(", "));
-						}
-					}
-				}else{
-					if( module.json.type == "Attachment" || module.json.type == "AttachmentDg" ){
-						this._createNewEditTd(newTr, idx, editorTds[idx].get("id"), data, titleThs.length-1);
-					}else{
-						var text = this._getValueText(idx-1, data.text.join(", "));
-						this._createNewEditTd(newTr, idx, editorTds[idx].get("id"), text, titleThs.length-1);
-					}
-				}
+                if( data ){
+                    if (cell){
+                        if( module.json.type == "ImageClipper" ){
+                            this._createImage( cell, module, data.text );
+                        }else if( module.json.type == "Attachment" || module.json.type == "AttachmentDg" ){
+                            this._createAttachment( cell, module, data );
+                        }else{
+                            var text = this._getValueText(idx-1, data.text.join(", "));
+                            if( module.json.type == "Textarea"){
+                                cell.set("html", text);
+                            }else{
+                                cell.set("text", data.text.join(", "));
+                            }
+                        }
+                    }else{
+                        if( module.json.type == "Attachment" || module.json.type == "AttachmentDg" ){
+                            this._createNewEditTd(newTr, idx, editorTds[idx].get("id"), data, titleThs.length-1);
+                        }else{
+                            var text = this._getValueText(idx-1, data.text.join(", "));
+                            this._createNewEditTd(newTr, idx, editorTds[idx].get("id"), text, titleThs.length-1);
+                        }
+                    }
+                }else{
+                    if (!cell) this._createNewEditTd(newTr, idx, id, "", titleThs.length-1);
+                }
 			}else{
 				if (!cell) this._createNewEditTd(newTr, idx, id, "", titleThs.length-1);
 			}
@@ -731,7 +738,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 		if(!this.editable && !this.addable)options.readonly = true;
 
 		var atts = [];
-		data.each(function(d){
+		( data || [] ).each(function(d){
 			var att = module.attachmentController.attachments.find(function(a){
 				return d.id == a.data.id;
 			});
@@ -743,7 +750,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 		var attachmentController = new MWF.xApplication.process.Xform.AttachmentController(cell, module, options);
 		attachmentController.load();
 
-		data.each(function (att) {
+		( data || [] ).each(function (att) {
 			var attachment = this.form.businessData.attachmentList.find(function(a){
 				return a.id==att.id;
 			});
@@ -1646,21 +1653,23 @@ MWF.xApplication.process.Xform.DatagridPC$Data =  new Class({
 			var moduleNodes = this.form._getModuleNodes(this.node);
 			moduleNodes.each(function(node){
 				var json = this.form._getDomjson(node);
-				var isField = false;
-				if (json.type=="Attachment" || json.type=="AttachmentDg" ){
-					json.type = "AttachmentDg";
-					//json.site = this.dataGrid.getAttachmentRandomSite();
-					//json.id = json.site;
+				if( json ){
+                    var isField = false;
+                    if (json.type=="Attachment" || json.type=="AttachmentDg" ){
+                        json.type = "AttachmentDg";
+                        //json.site = this.dataGrid.getAttachmentRandomSite();
+                        //json.id = json.site;
+                    }
+                    var module = this.form._loadModule(json, node, function(){
+                        isField = this.field;
+                        this.field = false;
+                    });
+                    if( isField ){
+                        module.node.setStyle("padding-right","0px");
+                    }
+                    module.dataModule = this;
+                    this.dataGrid.editModules.push(module);
 				}
-				var module = this.form._loadModule(json, node, function(){
-					isField = this.field;
-					this.field = false;
-				});
-				if( isField ){
-					module.node.setStyle("padding-right","0px");
-				}
-				module.dataModule = this;
-				this.dataGrid.editModules.push(module);
 			}.bind(this));
 		}
 	}
