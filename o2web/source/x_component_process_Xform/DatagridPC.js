@@ -606,6 +606,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			var id = th.get("id");
 			var module = this.editModules[idx-1];
 			if (module){
+				var data;
 				if (module.json.type=="sequence"){
 					flag = false;
 					var i = newTr.rowIndex;
