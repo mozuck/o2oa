@@ -13,7 +13,6 @@ import com.x.base.core.entity.JpaObject;
 import com.x.base.core.project.annotation.FieldDescribe;
 import com.x.base.core.project.bean.WrapCopier;
 import com.x.base.core.project.bean.WrapCopierFactory;
-import com.x.base.core.project.config.Config;
 import com.x.base.core.project.exception.ExceptionAccessDenied;
 import com.x.base.core.project.gson.GsonPropertyObject;
 import com.x.base.core.project.http.ActionResult;
@@ -139,11 +138,11 @@ class ActionManageGetAssignment extends BaseAction {
 				logger.error(e);
 			}
 		});
-		future_task.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS);
-		future_review.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS);
-		future_taskCompleted.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS);
-		future_read.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS);
-		future_readCompleted.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS);
+		future_task.get(60, TimeUnit.SECONDS);
+		future_review.get(60, TimeUnit.SECONDS);
+		future_taskCompleted.get(60, TimeUnit.SECONDS);
+		future_read.get(60, TimeUnit.SECONDS);
+		future_readCompleted.get(60, TimeUnit.SECONDS);
 		result.setData(wo);
 		return result;
 	}
