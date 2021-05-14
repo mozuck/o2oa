@@ -198,7 +198,7 @@ MWFCalendar.EventForm = new Class({
         }
 
         if( repeat && repeat!="不" && repeat!="不重复" ){
-            "<tr><td styles='formTableTitle'>重复：</td>" +
+            html += "<tr><td styles='formTableTitle'>重复：</td>" +
             "    <td styles='formTableValue'>"+ repeat +"</td>" +
             "</tr>";
         }else{
@@ -711,6 +711,7 @@ MWFCalendar.EventForm = new Class({
         return false;
     },
     _createBottomContent : function(){
+        var editable = this.isEditable( this.data );
         var html = "<div style='width:724px;margin:0px auto;'><table width='724' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
             "<tr><td styles='formTableValue' width='80'></td>" +
             "    <td styles='formTableValue' style='padding-top: 15px;'>"+
