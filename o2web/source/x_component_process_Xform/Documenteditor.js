@@ -2231,6 +2231,15 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                 this.filetextEditor.on( 'paste', function( e ) {
                     var html = e.data.dataValue;
                     //if (this.json.fullWidth=="y") html = html.replace(/\x20/g, "　");
+                    var rexbr = /\<br\>|\<br \/\>|\<br\/\>/g;
+                    var rexp = /\<p\>/g;
+                    if (rexbr.test(html) && !rexp.test(html)){
+                        var ps = html.split(/\<br\>|\<br \/\>|\<br\/\>/g);
+                        html = "";
+                        ps.each(function(p){
+                            html = html + "<p>"+p+"</p>";
+                        });
+                    }
                     var tmp = new Element("div")
                     tmp.set("html", html);
                     var pList = tmp.getElements("p");
