@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.tools.MD5Tool;
 import org.apache.commons.collections4.list.TreeList;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,22 +46,23 @@ class ActionBundle extends BaseAction {
 			List<String> os = null;
 			switch (StringUtils.trimToEmpty(view.getType())) {
 
-			case View.TYPE_CMS:
-				CmsPlan cmsPlan = gson.fromJson(view.getData(), CmsPlan.class);
-				cmsPlan.runtime = runtime;
-				os = cmsPlan.fetchBundles();
-				break;
-			case View.TYPE_PROCESSPLATFORM:
-				ProcessPlatformPlan processPlatformPlan = gson.fromJson(view.getData(), ProcessPlatformPlan.class);
-				this.setProcessEdition(business, processPlatformPlan);
-				processPlatformPlan.runtime = runtime;
-				os = processPlatformPlan.fetchBundles();
-				break;
-			default:
-				break;
+				case View.TYPE_CMS:
+					CmsPlan cmsPlan = gson.fromJson(view.getData(), CmsPlan.class);
+					cmsPlan.runtime = runtime;
+					os = cmsPlan.fetchBundles();
+					break;
+				case View.TYPE_PROCESSPLATFORM:
+					ProcessPlatformPlan processPlatformPlan = gson.fromJson(view.getData(), ProcessPlatformPlan.class);
+					this.setProcessEdition(business, processPlatformPlan);
+					processPlatformPlan.runtime = runtime;
+					os = processPlatformPlan.fetchBundles();
+					break;
+				default:
+					break;
 			}
 			Wo wo = new Wo();
 			wo.setValueList(os);
+			wo.setKey(MD5Tool.getMD5Str(effectivePerson.getDistinguishedName()+ Config.token().getCipher()));
 			result.setData(wo);
 			return result;
 		}
@@ -103,6 +106,17 @@ class ActionBundle extends BaseAction {
 	}
 
 	public static class Wo extends WrapStringList {
+
+		@FieldDescribe("访问execute秘钥串.")
+		private String key;
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
+		}
 
 	}
 
