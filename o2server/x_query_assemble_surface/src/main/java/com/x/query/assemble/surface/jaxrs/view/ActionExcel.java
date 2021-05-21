@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.tools.ListTools;
+import com.x.base.core.project.tools.MD5Tool;
 import org.apache.commons.collections4.list.TreeList;
 
 import com.google.gson.JsonElement;
@@ -25,6 +28,7 @@ import com.x.query.core.entity.View;
 import com.x.query.core.express.plan.FilterEntry;
 import com.x.query.core.express.plan.Plan;
 import com.x.query.core.express.plan.Runtime;
+import org.apache.commons.lang3.StringUtils;
 
 class ActionExcel extends BaseAction {
 
@@ -32,6 +36,13 @@ class ActionExcel extends BaseAction {
 
 	ActionResult<Wo> execute(EffectivePerson effectivePerson, String id, JsonElement jsonElement) throws Exception {
 		ActionResult<Wo> result = new ActionResult<>();
+		Wi wi = this.convertToWrapIn(jsonElement, Wi.class);
+		if (ListTools.isNotEmpty(wi.getBundleList())){
+			String curKey = MD5Tool.getMD5Str(effectivePerson.getDistinguishedName()+ Config.token().getCipher());
+			if (!curKey.equals(wi.key)) {
+				throw new ExceptionAccessDenied(effectivePerson.getDistinguishedName());
+			}
+		}
 		View view;
 		Runtime runtime;
 		Business business;
@@ -51,13 +62,12 @@ class ActionExcel extends BaseAction {
 			if (!business.readable(effectivePerson, view)) {
 				throw new ExceptionAccessDenied(effectivePerson, view);
 			}
-			Wi wi = this.convertToWrapIn(jsonElement, Wi.class);
 			runtime = this.runtime(effectivePerson, business, view, wi.getFilterList(), wi.getParameter(),
 					wi.getCount(), false);
 			runtime.bundleList = wi.getBundleList();
 		}
 		Plan plan = this.accessPlan(business, view, runtime);
-		String excelFlag = this.girdWriteToExcel(effectivePerson, business, plan, view);
+		String excelFlag = this.girdWriteToExcel(effectivePerson, business, plan, view, wi.getExcelName());
 		Wo wo = new Wo();
 		wo.setId(excelFlag);
 		result.setData(wo);
@@ -79,8 +89,14 @@ class ActionExcel extends BaseAction {
 		@FieldDescribe("数量")
 		private Integer count = 0;
 
+		@FieldDescribe("excel导出名称，默认为视图名称")
+		private String excelName;
+
 		@FieldDescribe("限定结果集")
 		public List<String> bundleList = new TreeList<>();
+
+		@FieldDescribe("秘钥串，结果集不为空时必须传.")
+		private String key;
 
 		public List<FilterEntry> getFilterList() {
 			return filterList;
@@ -112,6 +128,22 @@ class ActionExcel extends BaseAction {
 
 		public void setBundleList(List<String> bundleList) {
 			this.bundleList = bundleList;
+		}
+
+		public String getExcelName() {
+			return excelName;
+		}
+
+		public void setExcelName(String excelName) {
+			this.excelName = excelName;
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
 		}
 	}
 

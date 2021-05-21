@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.exception.ExceptionAccessDenied;
+import com.x.base.core.project.tools.ListTools;
+import com.x.base.core.project.tools.MD5Tool;
 import org.apache.commons.collections4.list.TreeList;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,27 +45,33 @@ class ActionSimulate extends BaseAction {
 			if (wi == null) {
 				wi = new Wi();
 			}
+			if (ListTools.isNotEmpty(wi.getBundleList())){
+				String curKey = MD5Tool.getMD5Str(effectivePerson.getDistinguishedName()+ Config.token().getCipher());
+				if (!curKey.equals(wi.key)) {
+					throw new ExceptionAccessDenied(effectivePerson.getDistinguishedName());
+				}
+			}
 			Runtime runtime = this.runtime(effectivePerson, business, view, wi.getFilterList(), wi.getParameter(), wi.getCount(), false);
 			runtime.bundleList = wi.getBundleList();
 			switch (StringUtils.trimToEmpty(view.getType())) {
 
-			case View.TYPE_CMS:
-				CmsPlan cmsPlan = gson.fromJson(view.getData(), CmsPlan.class);
-				cmsPlan.runtime = runtime;
-				cmsPlan.access();
-				result.setData(cmsPlan);
-				break;
+				case View.TYPE_CMS:
+					CmsPlan cmsPlan = gson.fromJson(view.getData(), CmsPlan.class);
+					cmsPlan.runtime = runtime;
+					cmsPlan.access();
+					result.setData(cmsPlan);
+					break;
 
-			case View.TYPE_PROCESSPLATFORM:
-				ProcessPlatformPlan processPlatformPlan = gson.fromJson(view.getData(), ProcessPlatformPlan.class);
-				this.setProcessEdition(business, processPlatformPlan);
-				processPlatformPlan.runtime = runtime;
-				processPlatformPlan.access();
-				result.setData(processPlatformPlan);
-				break;
+				case View.TYPE_PROCESSPLATFORM:
+					ProcessPlatformPlan processPlatformPlan = gson.fromJson(view.getData(), ProcessPlatformPlan.class);
+					this.setProcessEdition(business, processPlatformPlan);
+					processPlatformPlan.runtime = runtime;
+					processPlatformPlan.access();
+					result.setData(processPlatformPlan);
+					break;
 
-			default:
-				break;
+				default:
+					break;
 			}
 			return result;
 		}
@@ -79,6 +89,9 @@ class ActionSimulate extends BaseAction {
 
 		@FieldDescribe("限定结果集")
 		public List<String> bundleList = new TreeList<>();
+
+		@FieldDescribe("秘钥串，结果集不为空时必须传.")
+		private String key;
 
 		public List<FilterEntry> getFilterList() {
 			return filterList;
@@ -110,6 +123,14 @@ class ActionSimulate extends BaseAction {
 
 		public void setBundleList(List<String> bundleList) {
 			this.bundleList = bundleList;
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
 		}
 	}
 
