@@ -2363,6 +2363,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                             this.data[name] = v + "：";
                             break;
                         default:
+                            if (name==="subject") v = o2.txt(v);
                             this.data[name] = v;
                     }
                     break;

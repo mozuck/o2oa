@@ -1685,7 +1685,12 @@ if (!window.Promise){
 
     var _txt = function(v){
         var t = v.replace(/\</g, "&lt;");
-        t = t.replace(/\</g, "&gt;");
+        t = t.replace(/\>/g, "&gt;");
+        return t;
+    };
+    var _dtxt = function(v){
+        var t = v.replace(/&lt;/g, "<");
+        t = t.replace(/&gt;/g, ">");
         return t;
     };
 
@@ -1698,6 +1703,7 @@ if (!window.Promise){
     this.o2.release = _release;
     this.o2.defineProperties = _defineProperties;
     this.o2.txt = _txt;
+    this.o2.dtxt = _dtxt;
 
     Object.repeatArray = function(o, count){
         var arr = [];
