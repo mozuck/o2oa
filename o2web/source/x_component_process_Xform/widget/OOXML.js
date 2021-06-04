@@ -370,10 +370,24 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
     getTableTblW: function(table){
         var type = "dxa";
         //var w = table.clientWidth;
-        var tag = table.tagName.toString().toLowerCase();
-        var w = (tag==="td" || tag==="th") ? table.clientWidth : table.style.width
-        if (!w) w = table.style.width;
-        if (!w) w = table.get("width");
+        // var w;
+        // var tag = table.tagName.toString().toLowerCase();
+        // if  (tag==="td" || tag==="th"){
+        //     w = table.clientWidth;
+        //     w = this.pxToPt(w);
+        // }else{
+        //     w = table.style.width;
+        //     if (!w) w = table.style.width;
+        //     if (!w) w = table.get("width");
+        // }
+
+        var w = table.style.width;
+        //if (!w) w = table.style.width;
+        if (!w){
+            w = table.get("width");
+            if (w) w = this.pxToPt(w);
+        }
+
         //if (w) w = this.pxToPt(w);
         if (w && o2.typeOf(w)==="string"){
             var u = w.substring(w.length-1, w.length);
@@ -1250,7 +1264,7 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
                     break;
                 case "letter-spacing":
                     //实际测试发现letter-spacing * 0.55 转换word比较合适
-                    rPrs.spacing = {"val": (styles["letter-spacing"].toFloat()*20*0.55 || 0)};
+                    rPrs.spacing = {"val": (styles["letter-spacing"].toFloat()*20 || 0)};
                     break;
                 case "font-weight":
                     var b = styles["font-weight"];
