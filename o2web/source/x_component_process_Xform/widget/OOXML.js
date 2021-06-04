@@ -369,7 +369,10 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
     },
     getTableTblW: function(table){
         var type = "dxa";
-        var w = table.style.width;
+        //var w = table.clientWidth;
+        var tag = table.tagName.toString().toLowerCase();
+        var w = (tag==="td" || tag==="th") ? table.clientWidth : table.style.width
+        if (!w) w = table.style.width;
         if (!w) w = table.get("width");
         //if (w) w = this.pxToPt(w);
         if (w && o2.typeOf(w)==="string"){
