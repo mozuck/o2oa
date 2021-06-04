@@ -2,7 +2,6 @@ package com.x.processplatform.assemble.surface.jaxrs.attachment;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,12 +39,10 @@ class V2UploadWorkOrWorkCompleted extends BaseAction {
 		ActionResult<Wo> result = new ActionResult<>();
 		Wo wo = new Wo();
 
-		CompletableFuture<Boolean> checkControlFuture = this.readableWithWorkOrWorkCompletedFuture(effectivePerson,
-				workOrWorkCompleted);
-
-		if (BooleanUtils
-				.isFalse(checkControlFuture.get(Config.processPlatform().getAsynchronousTimeout(), TimeUnit.SECONDS))) {
-			throw new ExceptionAccessDenied(effectivePerson, workOrWorkCompleted);
+		try (EntityManagerContainer emc = EntityManagerContainerFactory.instance().create()) {
+			Business business = new Business(emc);
+			business.readableWithWorkOrWorkCompleted(effectivePerson, workOrWorkCompleted,
+					new ExceptionEntityNotExist(workOrWorkCompleted));
 		}
 
 		try (EntityManagerContainer emc = EntityManagerContainerFactory.instance().create()) {
