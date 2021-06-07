@@ -98,8 +98,8 @@ abstract class BaseAction extends StandardJaxrsAction {
 		String title = XGsonBuilder.extractString(jsonElement, WorkCompleted.title_FIELDNAME);
 		String serial = XGsonBuilder.extractString(jsonElement, WorkCompleted.serial_FIELDNAME);
 		// 如果有数据就将数据覆盖到work task taskCompleted read readCompleted review 中
-		if (((null != title) && (!Objects.equals(title, workCompleted.getTitle())))
-				|| ((null != serial) && (!Objects.equals(serial, workCompleted.getSerial())))) {
+		if ((StringUtils.isNotBlank(title) && (!Objects.equals(title, workCompleted.getTitle())))
+				|| (StringUtils.isNotBlank(serial) && (!Objects.equals(serial, workCompleted.getSerial())))) {
 			business.entityManagerContainer().beginTransaction(WorkCompleted.class);
 			business.entityManagerContainer().beginTransaction(Task.class);
 			business.entityManagerContainer().beginTransaction(TaskCompleted.class);
@@ -154,7 +154,7 @@ abstract class BaseAction extends StandardJaxrsAction {
 	private void updateTitle(String title, WorkCompleted workCompleted, List<Task> tasks,
 			List<TaskCompleted> taskCompleteds, List<Read> reads, List<ReadCompleted> readCompleteds,
 			List<Review> reviews) {
-		if ((null != title) && (!Objects.equals(title, workCompleted.getTitle()))) {
+		if (StringUtils.isNotBlank(title) && (!Objects.equals(title, workCompleted.getTitle()))) {
 			workCompleted.setTitle(title);
 			for (Task o : tasks) {
 				o.setTitle(title);

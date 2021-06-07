@@ -159,6 +159,7 @@ public class MessageFactory {
 		String title = "";
 		if (StringUtils.isEmpty(o.getTitle())) {
 			title = "无标题 " + DateTools.format(o.getStartTime());
+			o.setTitle(title);
 		} else {
 			title = o.getTitle();
 		}
@@ -170,6 +171,7 @@ public class MessageFactory {
 		String title = "";
 		if (StringUtils.isEmpty(o.getTitle())) {
 			title = "无标题 " + DateTools.format(o.getStartTime());
+			o.setTitle(title);
 		} else {
 			title = o.getTitle();
 		}
@@ -181,6 +183,7 @@ public class MessageFactory {
 		String title = "";
 		if (StringUtils.isEmpty(o.getTitle())) {
 			title = "无标题 " + DateTools.format(o.getStartTime());
+			o.setTitle(title);
 		} else {
 			title = o.getTitle();
 		}
@@ -192,6 +195,7 @@ public class MessageFactory {
 		String title = "";
 		if (StringUtils.isEmpty(o.getTitle())) {
 			title = "无标题 " + DateTools.format(o.getStartTime());
+			o.setTitle(title);
 		} else {
 			title = o.getTitle();
 		}
