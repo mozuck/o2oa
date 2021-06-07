@@ -36,7 +36,9 @@ import com.x.processplatform.service.processing.Business;
 import com.x.query.core.entity.Item;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jsoup.internal.StringUtil;
 
 abstract class BaseAction extends StandardJaxrsAction {
 
@@ -56,13 +58,13 @@ abstract class BaseAction extends StandardJaxrsAction {
 	// 将data中的Title 和 serial 字段同步到work中
 	void updateTitleSerial(Business business, Work work, JsonElement jsonElement) throws Exception {
 		String title = XGsonBuilder.extractString(jsonElement, Work.title_FIELDNAME);
-		if (null == title) {
+		if (StringUtil.isBlank(title)) {
 			title = XGsonBuilder.extractString(jsonElement, Work.TITLEALIAS_SUBJECT);
 		}
 		String serial = XGsonBuilder.extractString(jsonElement, Work.serial_FIELDNAME);
 		// 如果有数据就将数据覆盖到work task taskCompleted read readCompleted review 中
-		if (((null != title) && (!Objects.equals(title, work.getTitle())))
-				|| ((null != serial) && (!Objects.equals(serial, work.getSerial())))) {
+		if ((StringUtils.isNotBlank(title) && (!Objects.equals(title, work.getTitle())))
+				|| (StringUtils.isNotBlank(serial) && (!Objects.equals(serial, work.getSerial())))) {
 			business.entityManagerContainer().beginTransaction(Work.class);
 			business.entityManagerContainer().beginTransaction(Task.class);
 			business.entityManagerContainer().beginTransaction(TaskCompleted.class);
@@ -194,7 +196,7 @@ abstract class BaseAction extends StandardJaxrsAction {
 			}
 		}
 	}
-	
+
 	private void updateSerial(String serial, WorkCompleted workCompleted, List<Task> tasks, List<TaskCompleted> taskCompleteds,
 			List<Read> reads, List<ReadCompleted> readCompleteds, List<Review> reviews) {
 		if ((null != serial) && (!Objects.equals(serial, workCompleted.getSerial()))) {
