@@ -130,7 +130,7 @@ abstract class BaseAction extends StandardJaxrsAction {
 
 	private void updateTitle(String title, Work work, List<Task> tasks, List<TaskCompleted> taskCompleteds,
 			List<Read> reads, List<ReadCompleted> readCompleteds, List<Review> reviews) {
-		if ((null != title) && (!Objects.equals(title, work.getTitle()))) {
+		if (StringUtils.isNotBlank(title) && (!Objects.equals(title, work.getTitle()))) {
 			work.setTitle(title);
 			for (Task o : tasks) {
 				o.setTitle(title);
