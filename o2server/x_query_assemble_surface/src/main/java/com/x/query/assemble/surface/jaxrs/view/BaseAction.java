@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.google.gson.reflect.TypeToken;
 import com.x.base.core.container.EntityManagerContainer;
@@ -166,7 +165,7 @@ abstract class BaseAction extends StandardJaxrsAction {
 
 	}
 
-	protected String girdWriteToExcel(EffectivePerson effectivePerson, Business business, Plan plan, View view)
+	protected String girdWriteToExcel(EffectivePerson effectivePerson, Business business, Plan plan, View view, String excelName)
 			throws Exception {
 		try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream os = new ByteArrayOutputStream()) {
 			XSSFSheet sheet = workbook.createSheet("grid");
@@ -197,7 +196,13 @@ abstract class BaseAction extends StandardJaxrsAction {
 					}
 				}
 			}
-			String name = view.getName() + ".xlsx";
+			if(StringUtils.isEmpty(excelName)) {
+				excelName = view.getName() + ".xlsx";
+			}
+			if(!excelName.toLowerCase().endsWith(".xlsx")){
+				excelName = excelName + ".xlsx";
+			}
+			String name = excelName;
 			workbook.write(os);
 			ExcelResultObject obj = new ExcelResultObject();
 			obj.setBytes(os.toByteArray());

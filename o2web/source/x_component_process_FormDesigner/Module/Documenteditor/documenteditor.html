@@ -130,6 +130,16 @@
 				</td>
 			</tr>
 		</table>
+		<table width="100%" border="0" cellpadding="5" cellspacing="0" class="editTable">
+			<tr>
+				<td class="editTableTitle">全屏:</td>
+				<td class="editTableValue">
+					<input class="editTableRadio" name="canFullScreen" text{($.canFullScreen!=='n')?'checked':''} type="radio" value="y"/>允许
+					<input class="editTableRadio" name="canFullScreen" text{($.canFullScreen=='n')?'checked':''} type="radio" value="n"/>不允许
+					<div>是否允许全屏显示</div>
+				</td>
+			</tr>
+		</table>
 
 		<table width="100%" border="0" cellpadding="5" cellspacing="0" class="editTable">
 			<tr>
@@ -142,6 +152,13 @@
 		</table>
 		<div id="text{$.pid}toWordArea" style="display: text{($.toWord=='y')?'block':'none'}">
 			<table width="100%" border="0" cellpadding="5" cellspacing="0" class="editTable">
+				<tr>
+					<td class="editTableTitle">转换方式:</td>
+					<td class="editTableValue">
+						<input class="editTableRadio" name="wordConversionType" text{($.wordConversionType!='service')?'checked':''} type="radio" value="ooxml"/>OOXML
+						<input class="editTableRadio" name="wordConversionType" text{($.wordConversionType=='service')?'checked':''} type="radio" value="service"/>Service
+					</td>
+				</tr>
 				<tr>
 					<td class="editTableTitle">文件名:</td>
 					<td class="editTableValue"><input type="text" name="toWordFilename" value="text{$.toWordFilename}" class="editTableInput"/></td>

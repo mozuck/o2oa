@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.tools.MD5Tool;
 import org.apache.commons.collections4.list.TreeList;
 
 import com.google.gson.JsonElement;
@@ -57,19 +59,31 @@ class ActionBundleWithQuery extends BaseAction {
 		}
 		Wo wo = new Wo();
 		wo.setValueList(this.fetchBundle(business, view, runtime));
+		wo.setKey(MD5Tool.getMD5Str(effectivePerson.getDistinguishedName()+ Config.token().getCipher()));
 		result.setData(wo);
 		return result;
 	}
 
 	public static class Wo extends WrapStringList {
 
+		@FieldDescribe("访问execute秘钥串.")
+		private String key;
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
+		}
+
 	}
 
 	public static class Wi extends GsonPropertyObject {
 		@FieldDescribe("过滤")
 		@FieldTypeDescribe(fieldType="class",fieldTypeName = "com.x.query.core.express.plan.FilterEntry",
-		fieldValue="{value='',otherValue='',path='',formatType='',logic='',comparison=''}",
-		fieldSample="{'logic':'逻辑运算:and|or','path':'data数据的路径:$work.title','comparison':'比较运算符:equals|notEquals|like|notLike|greaterThan|greaterThanOrEqualTo|lessThan|lessThanOrEqualTo|range','value':'7月','formatType':'textValue|numberValue|dateTimeValue|booleanValue'}")
+				fieldValue="{value='',otherValue='',path='',formatType='',logic='',comparison=''}",
+				fieldSample="{'logic':'逻辑运算:and|or','path':'data数据的路径:$work.title','comparison':'比较运算符:equals|notEquals|like|notLike|greaterThan|greaterThanOrEqualTo|lessThan|lessThanOrEqualTo|range','value':'7月','formatType':'textValue|numberValue|dateTimeValue|booleanValue'}")
 
 		private List<FilterEntry> filterList = new TreeList<>();
 

@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.tools.ListTools;
+import com.x.base.core.project.tools.MD5Tool;
 import org.apache.commons.collections4.list.TreeList;
 
 import com.google.gson.JsonElement;
@@ -55,6 +58,12 @@ class ActionExecute extends BaseAction {
 			if (null == wi) {
 				wi = new Wi();
 			}
+			if (ListTools.isNotEmpty(wi.getBundleList())){
+				String curKey = MD5Tool.getMD5Str(effectivePerson.getDistinguishedName()+ Config.token().getCipher());
+				if (!curKey.equals(wi.key)) {
+					throw new ExceptionAccessDenied(effectivePerson.getDistinguishedName());
+				}
+			}
 			runtime = this.runtime(effectivePerson, business, view, wi.getFilterList(), wi.getParameter(),
 					wi.getCount(), false);
 			runtime.bundleList = wi.getBundleList();
@@ -67,8 +76,8 @@ class ActionExecute extends BaseAction {
 	public static class Wi extends GsonPropertyObject {
 		@FieldDescribe("过滤")
 		@FieldTypeDescribe(fieldType="class",fieldTypeName = "com.x.query.core.express.plan.FilterEntry",
-		fieldValue="{value='',otherValue='',path='',formatType='',logic='',comparison=''}",
-		fieldSample="{'logic':'逻辑运算:and|or','path':'data数据的路径:$work.title','comparison':'比较运算符:equals|notEquals|like|notLike|greaterThan|greaterThanOrEqualTo|lessThan|lessThanOrEqualTo|range','value':'7月','formatType':'textValue|numberValue|dateTimeValue|booleanValue'}")
+				fieldValue="{value='',otherValue='',path='',formatType='',logic='',comparison=''}",
+				fieldSample="{'logic':'逻辑运算:and|or','path':'data数据的路径:$work.title','comparison':'比较运算符:equals|notEquals|like|notLike|greaterThan|greaterThanOrEqualTo|lessThan|lessThanOrEqualTo|range','value':'7月','formatType':'textValue|numberValue|dateTimeValue|booleanValue'}")
 
 		private List<FilterEntry> filterList = new TreeList<>();
 
@@ -80,6 +89,9 @@ class ActionExecute extends BaseAction {
 
 		@FieldDescribe("限定结果集")
 		public List<String> bundleList = new TreeList<>();
+
+		@FieldDescribe("秘钥串，结果集不为空时必须传.")
+		private String key;
 
 		public List<FilterEntry> getFilterList() {
 			return filterList;
@@ -111,6 +123,14 @@ class ActionExecute extends BaseAction {
 
 		public void setBundleList(List<String> bundleList) {
 			this.bundleList = bundleList;
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
 		}
 	}
 
