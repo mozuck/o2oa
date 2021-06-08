@@ -32,6 +32,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         this.json = json;
         this.form = form;
         this.field = true;
+        this.json.canFullScreen="n";
     },
     _loadCss: function(reload){
         var key = encodeURIComponent(this.cssPath);

@@ -197,6 +197,9 @@ MWF.xApplication.process.Xform.LP = {
     "month" : "月",
     "date" : "日",
 
+    "fullScreen": "全屏",
+    "returnScreen": "恢复",
+
     "documentEditor": {
         "copies": "",
         "secret":"",
