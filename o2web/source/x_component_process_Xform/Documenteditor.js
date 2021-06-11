@@ -3411,7 +3411,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                                 if (cb) cb();
                             }.bind(this));
                         }else{
-                            if (callback) callback(oo_content, filename);
+                            if (callback) callback(oo_content, fileName);
                             if (cb) cb();
                         }
 
