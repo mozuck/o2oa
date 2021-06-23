@@ -3,8 +3,10 @@ package com.x.base.core.project.logger;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Objects;
 
+import com.x.base.core.project.message.MessageConnector;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -105,10 +107,14 @@ public class Audit {
 					}
 				}*/
 				PrintStream stream = (PrintStream) Config.resource(Config.RESOURCE_AUDITLOGPRINTSTREAM);
-				stream.printf("%tF %tT|2.0||1||%s|%s|%s|%s|%s||%s|true|%s|%d|%d|true|%s|%s|%s|%s|%s||", end, end, this.userId,
+				String auditLog = String.format("%tF %tT|2.0||1||%s|%s|%s|%s|%s||%s|true|%s|%d|%d|true|%s|%s|%s|%s|%s||", end, end, this.userId,
 						this.userId, systemName, system, this.uri, op, this.getParameter(op, system, extend1), end.getTime(), elapsed, hostAddress, hostName,
 						getTerminal(), this.remoteAddress, this.userAgent);
-				stream.println();
+				stream.println(auditLog);
+
+				HashMap<String, String> map = new HashMap<>();
+				map.put("auditLog", auditLog);
+				MessageConnector.send(MessageConnector.TYPE_AUDIT_LOG, op, this.person, map);
 			}
 		} catch (Exception e) {
 			System.out.println("审计日志打印异常"+e.getMessage());
