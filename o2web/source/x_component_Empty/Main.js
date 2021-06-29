@@ -30,7 +30,7 @@ MWF.xApplication.Empty.Main = new Class({
 
 			// this.content.loadHtml(url, {"bind": {"lp": this.lp, "data": json}, "module": this}, function(){
 			// 	this.doSomething();
-			// }.bind(this)); 111
+			// }.bind(this)); 
 			//
 			// o2.load(["js1", "js2"], {}, function(){});	//js
 			//
