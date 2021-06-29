@@ -25,74 +25,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
         this.selectType = "identity";
         this.className = "IdentityWidthDutyCategoryByUnit";
     },
-    // loadSelectItems: function (addToNext) {
-    //     //根据组织分类展现职务
-    //     if (this.options.resultType === "person") {
-    //         if (this.titleTextNode) {
-    //             this.titleTextNode.set("text", MWF.xApplication.Selector.LP.selectPerson);
-    //         } else {
-    //             this.options.title = MWF.xApplication.Selector.LP.selectPerson;
-    //         }
-    //     }
-    //     if (this.options.disabled) {
-    //         this.afterLoadSelectItem();
-    //         return;
-    //     }
-    //
-    //     if (this.options.dutys.length) {
-    //         this.loadInclude(function () {
-    //             this.includeLoaded = true;
-    //             if (this.dutyLoaded) {
-    //                 this.afterLoadSelectItem();
-    //             }
-    //         }.bind(this));
-    //         if (this.options.units.length) {
-    //
-    //             var units = [];
-    //             for (var i = 0; i < this.options.units.length; i++) {
-    //                 var unit = this.options.units[i];
-    //                 if (typeOf(unit) === "string") {
-    //                     units.push(unit)
-    //                 } else {
-    //                     units.push(unit.distinguishedName || unit.unique || unit.id || unit.levelName)
-    //                 }
-    //             }
-    //             this.unitStringList = units;
-    //
-    //             var getAllIdentity = function (unitList) {
-    //                 o2.Actions.load("x_organization_assemble_express").UnitDutyAction.listIdentityWithUnitWithNameObject({
-    //                     nameList: this.options.dutys,
-    //                     unitList: unitList
-    //                 }, function (json) {
-    //                     this._loadSelectItems(json.data)
-    //                 }.bind(this))
-    //             }.bind(this);
-    //
-    //             if (this.options.expandSubEnable) {
-    //                 o2.Actions.load("x_organization_assemble_express").UnitAction.listWithUnitSubNested({
-    //                     unitList: units
-    //                 }, function (json) {
-    //                     getAllIdentity(units.combine(json.data ? json.data.unitList : []));
-    //                 }.bind(this))
-    //             } else {
-    //                 getAllIdentity(units);
-    //             }
-    //         } else {
-    //             var identityList = [];
-    //             var count = 0;
-    //             this.options.dutys.each(function (d) {
-    //                 this.orgAction.listIdentityWithDuty(function (json) {
-    //                     count++;
-    //                     identityList = identityList.combine(json.data);
-    //                     if (this.options.dutys.length === count) this._loadSelectItems(identityList);
-    //                 }.bind(this), function () {
-    //                     count++;
-    //                     if (this.options.dutys.length === count) this._loadSelectItems(identityList);
-    //                 }.bind(this), d);
-    //             }.bind(this));
-    //         }
-    //     }
-    // },
     getUnitUniqueFormDn : function(dn){
         if(!dn)return "";
         var arr = dn.split("@");
@@ -136,40 +68,54 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
             this.unitStringList = units;
             this.unitUniqueList = unitUniques;
 
+            this.loadingCountDuty = "wait";
+
             o2.Actions.load("x_organization_assemble_express").UnitDutyAction.listIdentityWithUnitWithNameObject({
                 nameList: this.options.dutys,
                 unitList: units,
                 recursiveUnit : !!this.options.expandSubEnable
             }, function (json) {
                 this.allIdentityData = json.data;
+
+                this.setUnitLevelNameMap(); //如果需要检查状态，创建身份-所在组织层次名对应关系
+                // this.setUnitLevelNameMapInValues(); //如果需要检查状态，创建已选值身份-所在组织层次名对应关系
+
                 this._loadSelectItems(json.data)
             }.bind(this))
         }else{
             this.afterLoadSelectItem();
         }
+
+        if( this.isCheckStatusOrCount() ) {
+            this.loadingCountInclude = "wait";
+            this.loadIncludeCount();
+        }
     },
     _loadSelectItems: function (identityList) {
         //this.listAllIdentityInUnitObject( identityList );
-        var unitTree = this.listNestedUnitByIdentity(identityList);
-        this.dataTree = unitTree;
-        this.uniqueIdentity(unitTree);
-        if (this.options.dutyUnitLevelBy === "duty") {
-            this.level1Container = [];
-            if (this.options.units && this.options.units.length) {
-                this.options.units.each( function (unit ,i) {
-                    var div = new Element("div").inject(this.itemAreaNode);
-                    this.level1Container.push(div);
-                }.bind(this))
+         this.listNestedUnitByIdentity(identityList, function (unitTree) {
+            this.dataTree = unitTree;
+            this.uniqueIdentity(unitTree);
+            this.loadingCountDuty = "ready";
+            this.checkLoadingCount();
+            if (this.options.dutyUnitLevelBy === "duty") {
+                this.level1Container = [];
+                if (this.options.units && this.options.units.length) {
+                    this.options.units.each( function (unit ,i) {
+                        var div = new Element("div").inject(this.itemAreaNode);
+                        this.level1Container.push(div);
+                    }.bind(this))
+                }
+                this._loadSelectItemsByDutyUnit(unitTree);
+            } else {
+                this._loadSelectItemsByIdentityUnit(unitTree);
             }
-            this._loadSelectItemsByDutyUnit(unitTree);
-        } else {
-            this._loadSelectItemsByIdentityUnit(unitTree);
-        }
 
-        this.dutyLoaded = true;
-        if (this.includeLoaded) {
-            this.afterLoadSelectItem();
-        }
+            this.dutyLoaded = true;
+            if (this.includeLoaded) {
+                this.afterLoadSelectItem();
+            }
+        }.bind(this));
     },
     _loadSelectItemsByIdentityUnit: function (unitTree) {
         if (!unitTree.unitList) return;
@@ -179,6 +125,9 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
             // if( !this.isExcluded( unit ) ) {
             var category = this._newItemCategory("ItemCategory", unit, this, this.itemAreaNode);
             this.subCategorys.push(category);
+
+            var key = this.options.dutyUnitLevelBy === "duty" ? "matchUnitLevelName" : "unitLevelName";
+            this.subCategoryMapWithDuty[unit.matchLevelName || unit.levelName] = category;
             // }
         }
     },
@@ -223,6 +172,7 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
                 }
                 var category = this._newItemCategory("ItemCategory", unit, this, container);
                 this.subCategorys.push(category);
+                this.subCategoryMapWithDuty[unit.matchLevelName || unit.levelName] = category;
                 // }
             } else {
                 this._loadSelectItemsByDutyUnit(unit);
@@ -271,24 +221,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
         }
         return flag;
     },
-    // listAllIdentityInUnitObject: function () {
-    //     var unitArray = [];
-    //     for (var i = 0; i < identityList.length; i++) {
-    //         unitArray.push(identityList[i].unit || identityList[i].unitLevelName);
-    //     }
-    //     o2.Actions.load("x_organization_assemble_express").UnitAction.listObject({
-    //         unitList: unitArray
-    //     }, function (json) {
-    //         this.allIdentityInUnitObject = {};
-    //         json.data.each(function (u) {
-    //             this.allIdentityInUnitObject[u.levelName] = u;
-    //         }.bind(this));
-    //         if (callback) callback();
-    //     }.bind(this), null, false)
-    // },
-    getUnitOrderNumber: function (unit) {
-        return this.allIdentityInUnitObject[unit.levelName].orderNumber;
-    },
     listAllUnitObject: function (identityList, callback) {
         var key = this.options.dutyUnitLevelBy === "duty" ? "matchUnitLevelName" : "unitLevelName";
         var unitArray = [];
@@ -308,18 +240,19 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
         o2.Actions.load("x_organization_assemble_express").UnitAction.listObject({
             unitList: unitArray
         }, function (json) {
-            this.allUnitObject = {};
+            this.allUnitObjectWithDuty = {};
             json.data.each(function (u) {
-                this.allUnitObject[u.levelName] = u;
+                this.allUnitObjectWithDuty[u.levelName] = u;
             }.bind(this));
             if (callback) callback();
-        }.bind(this), null, false)
+        }.bind(this))
     },
-    listNestedUnitByIdentity: function (identityList) {
-        this.listAllUnitObject(identityList);
-        return this._listNestedUnitByIdentity(identityList);
+    listNestedUnitByIdentity: function (identityList, callback) {
+        this.listAllUnitObject(identityList, function () {
+            this._listNestedUnitByIdentity(identityList, callback);
+        }.bind(this));
     },
-    _listNestedUnitByIdentity: function (identityList) {
+    _listNestedUnitByIdentity: function (identityList, callback) {
         debugger;
         //identityList = Array.unique(identityList);
         var key = this.options.dutyUnitLevelBy === "duty" ? "matchUnitLevelName" : "unitLevelName";
@@ -338,7 +271,7 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
                 nameList.push(unitLevelNameList[j]);
                 var name = nameList.join("/");
 
-                if (this.isExcluded(this.allUnitObject[name] || {})) {
+                if (this.isExcluded(this.allUnitObjectWithDuty[name] || {})) {
                     flag = false;
                     break;
                 }
@@ -354,20 +287,20 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
                 }
                 if (!found) {
                     // var obj = {};
-                    var obj = this.allUnitObject[name] || {};
+                    var obj = this.allUnitObjectWithDuty[name] || {};
                     obj.matchLevelName = name;
                     tree.unitList.push(obj);
                     tree = obj;
                 }
                 // if( !tree.distinguishedName ){
-                //     tree = Object.merge( tree, this.allUnitObject[name] );
+                //     tree = Object.merge( tree, this.allUnitObjectWithDuty[name] );
                 // }
                 if (!tree.identityList) tree.identityList = [];
 
             }
             if (flag) tree.identityList.push(identityList[i]);
         }
-        return unitTree;
+        if(callback)callback(unitTree);
     },
     uniqueIdentity: function (tree) {
 
@@ -403,7 +336,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
                 if (!isExist(tree.identityList[i], i)){
                     identityList.push(tree.identityList[i]);
                 }else if( this.options.identitySortBy !== "identityNumber" ){
-                    debugger;
                     var index = getIndex(tree.identityList[i]);
                     if( index > -1 ){
                         var identity = tree.identityList[index];
@@ -421,15 +353,22 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
         }
         tree.identityList = identityList;
 
-        if (this.options.isCheckStatus) {
+        if (this.isCheckStatusOrCount()) {
             var names = (tree.matchLevelName || tree.levelName || "").split("/");
             var nameList = [];
+
+            var selectedCount = 0;
+            tree.identityList.each(function (id) {
+                if( this.isInValues(id) )selectedCount++;
+            }.bind(this));
+
             for (var i = 0; i < names.length; i++) {
                 nameList.push(names[i]);
                 var name = nameList.join("/");
-                var obj = this.allUnitObject[name];
+                var obj = this.allUnitObjectWithDuty[name];
                 if (obj) {
                     obj.subNestedIdentityCount = (obj.subNestedIdentityCount || 0) + identityList.length;
+                    obj.selectedNestedIdentityCount = (obj.selectedNestedIdentityCount || 0) + selectedCount;
                 }
             }
         }
@@ -561,6 +500,54 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
     },
     _newItemSearch: function (data, selector, container, level) {
         return new MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.SearchItem(data, selector, container, level);
+    },
+    setUnitLevelNameMap: function(){
+        var map = this.unitLevelNameMap = {};
+        if (this.isCheckStatusOrCount() && this.allIdentityData.length > 0) {
+            var key = this.options.dutyUnitLevelBy === "duty" ? "matchUnitLevelName" : "unitLevelName";
+            this.allIdentityData.each(function(id) {
+                if (!map[id.distinguishedName]) {
+                    map[id.distinguishedName] = [id[key]];
+                }else if( !map[id.distinguishedName].contains(id[key]) ){
+                    map[id.distinguishedName].push(id[key]);
+                }
+            })
+        }
+    },
+    getUnitLevelNameFormMap: function(id){
+        return (this.unitLevelNameMap && this.unitLevelNameMap[id.distinguishedName]) || [];
+    },
+    addSelectedCount: function( itemOrItemSelected, count ){
+        if( this.loadingCountInclude === "ignore" ){
+            this._addSelectedCountWithDuty(itemOrItemSelected, count);
+        }else{
+            this._addSelectedCountWithDuty(itemOrItemSelected, count);
+            this._addSelectedCount(itemOrItemSelected, count);
+        }
+
+    },
+    _addSelectedCountWithDuty: function( itemOrItemSelected, count ){
+        var itemData = itemOrItemSelected.data;
+        var unitlevelNameList = this.getUnitLevelNameFormMap(itemData);
+        unitlevelNameList.each(function (levelName) {
+            var subCategoryMap = this.subCategoryMapWithDuty;
+            var list = levelName.split("/");
+            var nameList = [];
+            for (var j = 0; j < list.length; j++) {
+                nameList.push(list[j]);
+                var name = nameList.join("/");
+                if ( subCategoryMap[name] ) {
+                    var category = subCategoryMap[name];
+                    category._addSelectedCount(count);
+                    subCategoryMap = category.subCategoryMapWithDuty;
+                }
+
+                var obj = this.allUnitObjectWithDuty[name];
+                if (obj) {
+                    obj.selectedNestedIdentityCount = obj.selectedNestedIdentityCount + count;
+                }
+            }
+        }.bind(this));
     }
     //_listItemNext: function(last, count, callback){
     //    this.action.listRoleNext(last, count, function(json){
@@ -584,24 +571,17 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
     _getShowName: function () {
         return this.data.name;
     },
-    _addSelectedCount: function (count, nested) {
+    _addSelectAllSelectedCount: function (count, nested) {
         debugger;
-        var c = (this._getSelectedCount() || 0) + count;
+        var c = (this._getSelectAllSelectedCount() || 0) + count;
         this.selectedCount = c;
-        this.checkCountAndStatus(c);
+        this._checkCountAndStatus(c);
 
-        if (nested && this.category && this.category._addSelectedCount) {
-            this.category._addSelectedCount(count, nested);
+        if (nested && this.category && this.category._addSelectAllSelectedCount) {
+            this.category._addSelectAllSelectedCount(count, nested);
         }
     },
-    // _getSelectedCount : function(){
-    //     var list = this.subItems.filter( function (item) { return item.isSelected; });
-    //     return list.length;
-    // },
-    _getTotalCount: function () {
-        return this.data.subNestedIdentityCount;
-    },
-    _getSelectedCount: function () {
+    _getSelectAllSelectedCount: function () {
         debugger;
         if (typeOf(this.selectedCount) === "number") {
             return this.selectedCount;
@@ -609,8 +589,33 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
             return 0;
         }
     },
-    _checkStatus: function () {
 
+
+    _addSelectedCount: function (count, nested) {
+        if( this.selector.loadingCount === "done" ){
+            var c = (this._getSelectedCount() || 0) + count;
+            this.selectedCount = c;
+            this._checkCountAndStatus(c);
+        }else{
+            this.selectedCount_wait = (this.selectedCount_wait || 0) + count;
+        }
+
+        if (nested && this.category && this.category._addSelectedCount) {
+            this.category._addSelectedCount(count, nested);
+        }
+    },
+    _getTotalCount: function () {
+        return this.data.subNestedIdentityCount;
+    },
+    _getSelectedCount : function(){
+        if( typeOf(this.selectedCount) === "number" )return this.selectedCount;
+        if( !this.selector.allUnitObjectWithDuty )return 0;
+        var levelName = this.data.matchLevelName || this.data.levelName;
+        var unit =  this.selector.allUnitObjectWithDuty[levelName];
+        var count = unit ? unit.selectedNestedIdentityCount : 0;
+        this.selectedCount = count + (this.selectedCount_wait || 0);
+        this.selectedCount_wait = 0;
+        return this.selectedCount;
     },
     isExisted: function (d) {
         if (!d) return true;
@@ -644,7 +649,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
                 return (a.orderNumber || 9999999) - (b.orderNumber || 9999999);
             });
         }else{
-            debugger;
             var getOrderNumber = function (d) {
                 var orderNumber = "999";
                 if( d.matchUnitDutyName ){
@@ -678,21 +682,12 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
     },
     loadSub: function (callback) {
         this._loadSub(function (firstLoad) {
-            if (firstLoad && (this.selector.options.showSelectedCount || this.selector.options.isCheckStatus)) {
-                var count = 0;
-                this.subCategorys.each(function (category) {
-                    var l = category.subItems.filter(function (item) {
-                        return item.isSelected;
-                    });
-                    count = count + l.length;
-                });
+            if (firstLoad && this.selector.isCheckStatusOrCount()) {
 
-                var list = this.subItems.filter(function (item) {
-                    return item.isSelected;
-                });
-                this.selectedCount = count + list.length;
+                if (this.selector.loadingCount === "done"){
+                    this.checkCountAndStatus();
+                }
 
-                this.checkCountAndStatus(this.selectedCount);
             }
             if (callback) callback();
         }.bind(this))
@@ -728,6 +723,7 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
                         // if( !this.selector.isExcluded( subData ) ) {
                         var category = this.selector._newItemCategory("ItemCategory", subData, this.selector, this.children, this.level + 1, this);
                         this.subCategorys.push(category);
+                        this.subCategoryMapWithDuty[subData.matchLevelName || subData.levelName] = category;
                         // category.loadSub()
                         // }
                     }.bind(this));

@@ -87,9 +87,14 @@ MWF.xApplication.Selector.Person = new Class({
         this.subCategorys = []; //直接的分类
         this.subItems = []; //直接的选择项
 
+        this.subCategoryMap = {};
+        this.subCategoryMapWithDuty = {};
+
         if( !this.options.values ){
             this.options.values = [];
         }
+
+        this.availableStatusTypes = ["identity","custom"];
 
         this._init();
     },
@@ -1098,10 +1103,12 @@ MWF.xApplication.Selector.Person = new Class({
         if (this.options.values.length){
             this.options.values.each(function(v, i){
                 if (typeOf(v)==="object"){
+                    v.isFromValues = true;
                     this.selectedItems.push(this._newItemSelected(v, this, null));
                 }else{
                     this._getItem(function(json){
                         this.options.values[i] = json.data;
+                        json.data.isFromValues = true;
                         this.selectedItems.push(this._newItemSelected(json.data, this, null));
                     }.bind(this), null, v, false);
                 }
@@ -1365,6 +1372,22 @@ MWF.xApplication.Selector.Person = new Class({
                 }
             }.bind(this), null, role);
         }.bind(this));
+    },
+    isInValues: function(d){
+        if( this.options.values.length === 0 )return false;
+        if( !this.valueFlagMap ){
+            this.valueFlagMap = {};
+            this.options.values.each( function( e ){
+                if( !e )return;
+                this.valueFlagMap[ typeOf( e ) === "string" ? e : ( e.distinguishedName || e.id || e.unique || e.employee || e.levelName) ] = true;
+            }.bind(this));
+        }
+        var map = this.valueFlagMap;
+        return ( d.distinguishedName && map[ d.distinguishedName ] ) ||
+            ( d.id && map[ d.id ] ) ||
+            ( d.unique && map[ d.unique ] ) ||
+            ( d.employee && map[ d.employee ] ) ||
+            ( d.levelName && map[ d.levelName ] );
     },
     isExcluded : function( d ){
         if( this.options.exclude.length === 0 )return false;
@@ -1755,6 +1778,28 @@ MWF.xApplication.Selector.Person = new Class({
         }
 
         return subCategoryListNode;
+    },
+    isCheckStatusOrCount: function(){
+        if( this.isCheckStatusFlag )return this.isCheckStatusFlag === "y";
+        if( this.availableStatusTypes.contains(this.selectType) &&
+            ( this.options.count.toInt() !== 1)  && (this.options.resultType !== "person") &&
+            ( this.options.showSelectedCount || this.options.isCheckStatus ) ){
+            this.isCheckStatusFlag = "y";
+            return true;
+        }else{
+            this.isCheckStatusFlag = "n";
+            return false;
+        }
+    },
+    checkCountAndStatus: function(){
+        if( this.subCategorys && this.subCategorys.length ){
+            this.subCategorys.each(function (category) {
+                if(category.checkCountAndStatus)category.checkCountAndStatus(true);
+            })
+        }
+    },
+    addSelectedCount: function( itemOrItemSelected, count ){
+
     }
     //checkClickFlatCategoryItem : function(categoryItemNode, itemNodeContainer){
     //    if( !this.flatCategorySeqObj_current ){
@@ -1821,6 +1866,8 @@ MWF.xApplication.Selector.Person.Item = new Class({
         this.category = category;
         this.subItems = [];
         this.subCategorys = [];
+        this.subCategoryMap = {};
+        this.subCategoryMapWithDuty = {};
         if(!delay)this.load();
     },
     _getShowName: function(){
@@ -2133,17 +2180,27 @@ MWF.xApplication.Selector.Person.Item = new Class({
             }.bind(this))
         }
 
+        var countItems = [];
         if (this.selectedItem){
             this.selector.selectedItems.erase(this.selectedItem);
 
-            this.selectedItem.items.each(function(item){
-                if( item.isSelected || ( item === this && isSelected ) ){
-                    var flag = this.selector.options.selectAllRange === "all" ||
-                        ( this.selector.selectType == "identity" && ( this.selector.options.showSelectedCount || this.selector.options.isCheckStatus ));
-                    if( flag ){
-                        if(item.category && item.category._addSelectedCount )item.category._addSelectedCount( -1, true );
+            debugger;
+
+            if( this.selector.isCheckStatusOrCount()){
+                this.selectedItem.items.each(function(item){
+                    if( item.isSelected || ( item === this && isSelected ) ){
+                        countItems.push(item);
                     }
-                }
+                }.bind(this));
+            }else if( this.selector.options.selectAllRange === "all" ){
+                this.selectedItem.items.each(function(item) {
+                    if (item.isSelected || (item === this && isSelected)) {
+                        if (item.category && item.category._addSelectAllSelectedCount) item.category._addSelectAllSelectedCount(-1, true);
+                    }
+                }.bind(this))
+           }
+
+            this.selectedItem.items.each(function(item){
 
                 if (item != this){
                     item.isSelected = false;
@@ -2162,6 +2219,11 @@ MWF.xApplication.Selector.Person.Item = new Class({
             this.selectedItem.destroy();
             this.selectedItem = null;
         }
+
+        if( this.selector.isCheckStatusOrCount()){
+            this.selector.addSelectedCount( this, -1, countItems );
+        }
+
         this.selector.fireEvent("unselectItem",[this]);
         if( checkValid )this.selector.fireEvent("valid", [this.selector, this]);
         if(callback)callback();
@@ -2196,6 +2258,11 @@ MWF.xApplication.Selector.Person.ItemSelected = new Class({
         }).inject(this.container);
         this.node.setStyle("display","none");
 
+        if(this.data.isFromValues){
+            this.isFromValues = true;
+            this.data.isFromValues = false;
+        }
+
         this.getData(function(){
             this.node.setStyle("display","");
             this.load();
@@ -2217,13 +2284,30 @@ MWF.xApplication.Selector.Person.ItemSelected = new Class({
     },
     clickItem: function( callback, checkValid ){
         if (this.items.length){
+            var items = [], map = {};
             this.items.each(function(item){
+                if( item.data.distinguishedName || item.data.unique ){
+                    if( (!item.data.distinguishedName || !map[item.data.distinguishedName]) && ( !item.data.unique || !map[item.data.unique])){
+                        items.push(item);
+                        map[item.data.distinguishedName] = true;
+                        map[item.data.unique] = true;
+                    }
+                }else{
+                    items.push(item);
+                }
+            });
+            items.each(function(item){
                 item.unSelected( checkValid );
             });
             if( checkValid )this.selector.fireEvent("valid", [this.selector, this])
         }else{
             //this.item.selectedItem = null;
             //this.item.isSelected = false;
+
+            if( this.selector.isCheckStatusOrCount()){
+                this.selector.addSelectedCount( this, -1, [] );
+            }
+
             this.destroy();
             this.selector.selectedItems.erase(this);
             if( checkValid )this.selector.fireEvent("valid", [this.selector, this])
@@ -2314,6 +2398,8 @@ MWF.xApplication.Selector.Person.ItemCategory = new Class({
         this.category = parentCategory;
         this.subItems = [];
         this.subCategorys = [];
+        this.subCategoryMap = {};
+        this.subCategoryMapWithDuty = {};
         if(!delay)this.load();
     },
     load : function(){
@@ -2494,7 +2580,7 @@ MWF.xApplication.Selector.Person.ItemCategory = new Class({
         var m = this.textNode.getStyle("margin-left").toFloat()+indent;
         this.textNode.setStyle("margin-left", ""+m+"px");
 
-        if( this.selector.options.showSelectedCount && this.selector.selectType == "identity" ){
+        if( this.selector.options.showSelectedCount && this.selector.availableStatusTypes.contains(this.selector.selectType) ){
             this.selectedCountNode = new Element("span").inject(this.textNode);
         }
 
@@ -2644,7 +2730,7 @@ MWF.xApplication.Selector.Person.ItemCategory = new Class({
 
                         var styles = this.selector.css.selectorItemCategoryActionNode_selectAll_selected;
 
-                        if( this.selector.options.isCheckStatus && this.selector.selectType === "identity" ){
+                        if( this.selector.options.isCheckStatus && this.selector.availableStatusTypes.contains(this.selector.selectType) ){
                             if( this._getSelectedCount() < this._getTotalCount() ){
                                 styles = this.selector.css.selectorItemCategoryActionNode_selectsome_selected;
                             }
@@ -2823,8 +2909,62 @@ MWF.xApplication.Selector.Person.ItemCategory = new Class({
         }else{
             return this.data.name;
         }
+    },
+    checkCountAndStatus: function( nestedSub ){
+        var count = this._getSelectedCount();
+        this._checkCountAndStatus(count);
+        if( nestedSub && this.subCategorys && this.subCategorys.length){
+            this.subCategorys.each(function(category){
+                if( category.checkCountAndStatus )category.checkCountAndStatus(nestedSub);
+            }.bind(this))
+        }
+    },
+    _checkCountAndStatus: function( count ){
+        if( this.selector.isCheckStatusOrCount() ){
+            if(this.selectedCountNode){
+                if( this.selector.options.showSelectedCount && this.selector.options.showAllCount ){
+                    var totalCount = this._getTotalCount();
+                    if(count || totalCount)this.selectedCountNode.set("text", (count||0)+"/"+ (totalCount||0));
+                }else if(this.selector.options.showSelectedCount){
+                    this.selectedCountNode.set("text", count ? "(" + count + ")" : "" );
+                }else if(this.selector.options.showAllCount){
+                    var totalCount = this._getTotalCount();
+                    this.selectedCountNode.set("text", totalCount ? "(" + totalCount + ")" : "" );
+                }
+            }
+            if( this.selector.options.isCheckStatus && this.selectAllNode ){
+                var total = this._getTotalCount();
+                if( total ){
+                    var styles;
+                    if( count >= total ){
+                        styles = this.selector.css.selectorItemCategoryActionNode_selectAll_selected;
+                        this.isSelectedSome = false;
+                        this.isSelectedAll = true;
+                    }else if( count > 0 ){
+                        styles = this.selector.css.selectorItemCategoryActionNode_selectsome_selected;
+                        this.isSelectedSome = true;
+                        this.isSelectedAll = false;
+                    }else{
+                        styles = this.selector.css.selectorItemCategoryActionNode_selectAll;
+                        this.isSelectedSome = false;
+                        this.isSelectedAll = false;
+                    }
+                    this.selectAllNode.setStyles( styles );
+                }
+            }
+        }else if( count === 0 && this.selector.options.selectAllRange === "all" && this.selectAllNode ){
+            styles = this.selector.css.selectorItemCategoryActionNode_selectAll;
+            this.isSelectedSome = false;
+            this.isSelectedAll = false;
+            this.selectAllNode.setStyles( styles );
+        }
+
+        // if( !this.selectedCountNode1 ){
+        //     this.selectedCountNode1 = new Element("span").inject(this.textNode);
+        // }
+        // this.selectedCountNode1.set("text",count);
     }
-});
+})
 
 MWF.xApplication.Selector.Person.ItemGroupCategory = new Class({
     Extends: MWF.xApplication.Selector.Person.ItemCategory,
