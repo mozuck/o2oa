@@ -971,8 +971,7 @@ MWF.xApplication.Calendar.CalendarMenu = new Class({
         "containerIsTarget" : true,
         "tooltipsOptions" : {
             axis : "x",
-            hasArrow : true,
-            hasMask : false,
+            hasArrow : true
         }
     },
     _selectItem : function( itemNode, itemData, ev ){
