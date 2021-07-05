@@ -235,7 +235,8 @@ var MTooltips = new Class({
                                 e.stopPropagation();
                             }.bind(this)
                         }
-                    }).inject( this.container );
+                    }).inject( this.node, "before" );
+                    //}).inject( this.container );
                 }
 
                 if( this.app ){
@@ -899,7 +900,7 @@ var MTooltips = new Class({
         return "";
     },
     _customNode : function( node, contentNode ){
-
+        this.fireEvent("customContent", [contentNode, node])
     },
     _setContent : function( contentNode ){
         this.contentNode = contentNode;
