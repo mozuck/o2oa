@@ -9,7 +9,7 @@ npm-debug.log
 /test/
 **/test/
 /bak/
-**/*.min1.js
+**/*.min.js
 package-lock.json
 /.svn/
 /ftpconfig.js
